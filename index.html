@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>UV – Unblock the Web</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔓</text></svg>">
+  <style>
+    :root{--bg:#0d1117;--panel:#161b22;--accent:#58a6ff;--text:#c9d1d9;--border:#30363d}
+    *{box-sizing:border-box;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+    body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh}
+    header{background:var(--panel);padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    #addr{flex:1;padding:.5rem .75rem;border:1px solid var(--border);border-radius:6px;background:#0d1117;color:var(--text);font-size:14px}
+    #go,#fs{padding:.5rem .9rem;border:none;border-radius:6px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;transition:background .15s}
+    #go:hover,#fs:hover{background:#4e96f0}
+    main{flex:1;display:flex;flex-direction:column}
+    iframe{flex:1;width:100%;border:none}
+    #favicon{width:18px;height:18px;margin-right:.4rem}
+  </style>
+</head>
+<body>
+<header>
+  <img id="favicon" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+  <input id="addr" type="text" placeholder="Search or type a URL" autocomplete="off">
+  <button id="go">Go</button>
+  <button id="fs">Fullscreen</button>
+</header>
+<main>
+  <iframe id="view" src=""></iframe>
+</main>
+
+<script type="module">
+/* ---- Ultraviolet core ---- */
+import Ultraviolet from 'https://cdn.jsdelivr.net/npm/@titaniumnetwork-dev/ultraviolet@2/dist/ultraviolet.bundle.js';
+await navigator.serviceWorker.register('/uv.sw.js');
+window.__uv$config = {
+  prefix: '/service/',
+  bare:   'https://autumn-credit-b389.rydamandrohitshow.workers.dev/bare/',
+  encodeUrl: Ultraviolet.codec.xor.encode,
+  decodeUrl: Ultraviolet.codec.xor.decode,
+  handler:  '/uv.handler.js',
+  bundle:   '/uv.bundle.js',
+  config:   '/uv.config.js',
+  sw:       '/uv.sw.js'
+};
+
+/* ---- helpers ---- */
+const $ = q => document.querySelector(q);
+const codec = window.__uv$config;
+
+function go(raw){
+  const url = raw.trim();
+  if(!url) return;
+  const target = url.includes('.') && !url.includes(' ') ? url : `https://google.com/search?q=${encodeURIComponent(url)}`;
+  const enc = codec.prefix + codec.encodeUrl(target);
+  $('#view').src = enc;
+  $('#addr').value = target;
+}
+$('#go').onclick = () => go($('#addr').value);
+
+/* Enter key */
+$('#addr').onkeydown = e => { if(e.key==='Enter') go(e.target.value); };
+
+/* fullscreen about:blank */
+$('#fs').onclick = () => {
+  const raw = $('#addr').value.trim() || 'https://google.com';
+  const enc = codec.prefix + codec.encodeUrl(raw);
+  const w = window.open('about:blank','_blank','noopener,noreferrer');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>UV – FS</title><style>body{margin:0;overflow:hidden}</style></head><body><iframe src="${enc}" style="width:100vw;height:100vh;border:none;"></iframe></body></html>`);
+  w.document.close();
+};
+
+/* default start page */
+go('https://google.com');
+</script>
+</body>
+</html>
