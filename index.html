@@ -24,21 +24,13 @@
 </header>
 <main><iframe id="view" src=""></iframe></main>
 
-<script type="module">
-/* ---- UV core ---- */
-import Ultraviolet from 'https://cdn.jsdelivr.net/npm/@titaniumnetwork-dev/ultraviolet@2/dist/ultraviolet.bundle.js';
-await navigator.serviceWorker.register('/uv.sw.js');
-window.__uv$config = {
-  prefix: '/service/',
-  bare:   '/bare/',
-  encodeUrl: Ultraviolet.codec.xor.encode,
-  decodeUrl: Ultraviolet.codec.xor.decode,
-  handler:  '/uv.handler.js',
-  bundle:   '/uv.bundle.js',
-  config:   '/uv.config.js',
-  sw:       '/uv.sw.js'
+<script>
+/* ---- mini bare client (no SW) ---- */
+const xor = {
+  encode: str => { let out = ''; for (let i = 0; i < str.length; ++i) out += String.fromCharCode(str.charCodeAt(i) ^ 1); return btoa(out); },
+  decode: b64 => { let raw = atob(b64), out = ''; for (let i = 0; i < raw.length; ++i) out += String.fromCharCode(raw.charCodeAt(i) ^ 1); return out; }
 };
-const codec = window.__uv$config;
+function uvUrl(url) { return '/bare/' + xor.encode(url); }
 
 /* ---- search / url ---- */
 function go(raw){
@@ -47,8 +39,7 @@ function go(raw){
   const target = (inStr.includes('.') && !inStr.includes(' ') && !inStr.startsWith('https://'))
     ? 'https://' + inStr
     : `https://www.google.com/search?q=${encodeURIComponent(inStr)}`;
-  const enc = codec.prefix + codec.encodeUrl(target);
-  document.getElementById('view').src = enc;
+  document.getElementById('view').src = uvUrl(target);
   document.getElementById('addr').value = target;
 }
 document.getElementById('go').onclick = () => go(document.getElementById('addr').value);
@@ -57,7 +48,7 @@ document.getElementById('addr').onkeydown = e => { if(e.key==='Enter') go(e.targ
 /* ---- about:blank fullscreen ---- */
 document.getElementById('fs').onclick = () => {
   const raw = document.getElementById('addr').value.trim() || 'https://google.com';
-  const enc = codec.prefix + codec.encodeUrl(raw);
+  const enc = uvUrl(raw);
   const w = window.open('about:blank','_blank','noopener,noreferrer');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>UV-FS</title><style>body{margin:0;overflow:hidden}</style></head><body><iframe src="${enc}" style="width:100vw;height:100vh;border:none;"></iframe></body></html>`);
   w.document.close();
