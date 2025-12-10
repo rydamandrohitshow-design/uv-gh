@@ -15,27 +15,23 @@
     #go:hover,#fs:hover{background:#4e96f0}
     main{flex:1;display:flex;flex-direction:column}
     iframe{flex:1;width:100%;border:none}
-    #favicon{width:18px;height:18px;margin-right:.4rem}
   </style>
 </head>
 <body>
 <header>
-  <img id="favicon" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-  <input id="addr" type="text" placeholder="Search or type a URL" autocomplete="off">
+  <input id="addr" type="text" placeholder="Search or type URL" autocomplete="off">
   <button id="go">Go</button>
   <button id="fs">Fullscreen</button>
 </header>
-<main>
-  <iframe id="view" src=""></iframe>
-</main>
+<main><iframe id="view" src=""></iframe></main>
 
 <script type="module">
-/* ---- Ultraviolet core ---- */
+/* ---- UV core ---- */
 import Ultraviolet from 'https://cdn.jsdelivr.net/npm/@titaniumnetwork-dev/ultraviolet@2/dist/ultraviolet.bundle.js';
 await navigator.serviceWorker.register('/uv.sw.js');
 window.__uv$config = {
   prefix: '/service/',
-  bare:   'https://autumn-credit-b389.rydamandrohitshow.workers.dev/bare/',
+  bare:   '/bare/',          // local bare bundle (no Worker)
   encodeUrl: Ultraviolet.codec.xor.encode,
   decodeUrl: Ultraviolet.codec.xor.decode,
   handler:  '/uv.handler.js',
@@ -43,34 +39,32 @@ window.__uv$config = {
   config:   '/uv.config.js',
   sw:       '/uv.sw.js'
 };
-
-/* ---- helpers ---- */
-const $ = q => document.querySelector(q);
 const codec = window.__uv$config;
 
+/* ---- search / url ---- */
 function go(raw){
-  const url = raw.trim();
-  if(!url) return;
-  const target = url.includes('.') && !url.includes(' ') ? url : `https://google.com/search?q=${encodeURIComponent(url)}`;
+  const inStr = raw.trim();
+  if(!inStr) return;
+  const target = (inStr.includes('.') && !inStr.includes(' ') && !inStr.startsWith('https://'))
+    ? 'https://' + inStr
+    : `https://www.google.com/search?q=${encodeURIComponent(inStr)}`;
   const enc = codec.prefix + codec.encodeUrl(target);
-  $('#view').src = enc;
-  $('#addr').value = target;
+  document.getElementById('view').src = enc;
+  document.getElementById('addr').value = target;
 }
-$('#go').onclick = () => go($('#addr').value);
+document.getElementById('go').onclick = () => go(document.getElementById('addr').value);
+document.getElementById('addr').onkeydown = e => { if(e.key==='Enter') go(e.target.value); };
 
-/* Enter key */
-$('#addr').onkeydown = e => { if(e.key==='Enter') go(e.target.value); };
-
-/* fullscreen about:blank */
-$('#fs').onclick = () => {
-  const raw = $('#addr').value.trim() || 'https://google.com';
+/* ---- about:blank fullscreen ---- */
+document.getElementById('fs').onclick = () => {
+  const raw = document.getElementById('addr').value.trim() || 'https://google.com';
   const enc = codec.prefix + codec.encodeUrl(raw);
   const w = window.open('about:blank','_blank','noopener,noreferrer');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>UV – FS</title><style>body{margin:0;overflow:hidden}</style></head><body><iframe src="${enc}" style="width:100vw;height:100vh;border:none;"></iframe></body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>UV-FS</title><style>body{margin:0;overflow:hidden}</style></head><body><iframe src="${enc}" style="width:100vw;height:100vh;border:none;"></iframe></body></html>`);
   w.document.close();
 };
 
-/* default start page */
+/* start page */
 go('https://google.com');
 </script>
 </body>
