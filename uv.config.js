@@ -1,1 +1,1 @@
-self.__uv$config = {};
+/* placeholder */
