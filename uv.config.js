@@ -1,1 +1,2 @@
+self.__uv$config = {};
 
